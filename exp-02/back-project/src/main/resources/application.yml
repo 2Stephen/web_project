@@ -1,0 +1,9 @@
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/javaweb
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 2432757689
