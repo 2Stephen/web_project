@@ -3,9 +3,20 @@
       <el-container class="container">
         <!-- Header -->
         <el-header class="header" :style="{backgroundColor:headerColor}">
-          <h1>Header</h1>
+          <div id="menu">
+            <el-dropdown trigger="click" @command="handleClick">
+              <span class="el-dropdown-link">
+                下拉菜单<i class="el-icon-arrow-down el-icon--right"></i>
+              </span>
+              <el-dropdown-menu slot="dropdown" >
+                <el-dropdown-item command="calendar">日历</el-dropdown-item>
+                <el-dropdown-item command="info">个人信息</el-dropdown-item>
+                <el-dropdown-item command="exit">注销</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
+          </div>
         </el-header>
-        
+
         <el-container class="content-container">
           <!-- Aside -->
           <el-aside class="aside" >
@@ -23,7 +34,7 @@
                   <span>功能菜单</span>
                 </template>
                 <el-menu-item-group>
-                  <el-menu-item @click="userManage" index="1-1">用户管理</el-menu-item>
+                  <el-menu-item @click="userManage" index="1-1">作者管理</el-menu-item>
                   <el-menu-item @click="docManage" index="1-2">文章管理</el-menu-item>
                 </el-menu-item-group>
               </el-submenu>
@@ -58,13 +69,41 @@
                   <div>我的头像</div>
                 </div>
               </el-col>
-              <!-- 右侧三分之二，日历展示 -->
+              <!-- 右侧三分之二，展示 -->
               <el-col :span="16">
-                <div class="calendar-section">
+                <div class="calendar-section" v-if="isShowCalendar">
+                  <h1>日历</h1>
                   <el-calendar v-model="date">
                   </el-calendar>
                   <h3>Calendar</h3>
                 </div>
+                    <div>
+                      <el-card v-if="isShowInfo" class="customCard">
+                        <div slot="header" class="clearfix">
+                          <span>个人信息</span>
+                        </div>
+                        <div>
+                          <el-row>
+                            <el-col id="label">
+                              <el-form label-position="left" label-width="5rem">
+                                <el-form-item label="用户名">
+                                  <el-input v-model="username" readonly class="inputRow"></el-input>
+                                </el-form-item>
+                                <el-form-item label="邮箱">
+                                  <el-input v-model="email" readonly class="inputRow"></el-input>
+                                </el-form-item>
+                                <el-form-item label="余额">
+                                  <el-input v-model="balance" readonly class="inputRow"></el-input>
+                                </el-form-item>
+                                <el-form-item label="生日">
+                                  <el-input v-model="birthday" readonly class="inputRow"></el-input>
+                                </el-form-item>
+                              </el-form>
+                            </el-col>
+                          </el-row>
+                        </div>
+                      </el-card>
+                    </div>              
               </el-col>
             </el-row>
           </el-main>
@@ -76,12 +115,28 @@
   <script>
   export default {
     name: 'MainPage',
+    computed: {
+    username() {
+      return this.$store.getters.username; // 获取用户名
+    },
+    email() {
+      return this.$store.getters.email; // 获取邮箱
+    },
+    birthday() {
+      return this.$store.getters.birthday; // 获取生日
+    },
+    balance() {
+      return this.$store.getters.balance; // 获取余额
+    }
+  },
     data() {
       return {
         url: 'https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg',
         date: new Date(),
         headerColor: '#1E88E5',
-        mainColor: '#BBDEFB'
+        mainColor: '#BBDEFB',
+        isShowCalendar: false,
+        isShowInfo: true
       }
     },
     methods: {
@@ -104,6 +159,17 @@
       bluePanel(){
         this.headerColor='#1E88E5'
         this.mainColor='#BBDEFB'
+      },
+      handleClick(command) {
+        if (command === 'calendar') {
+          this.isShowCalendar = true;
+          this.isShowInfo = false;
+        } else if (command === 'info') {
+           this.isShowInfo = true;
+           this.isShowCalendar = false;
+        } else if (command === 'exit') {
+          this.$router.push('/');
+        }
       }
     }
   }
@@ -118,15 +184,39 @@
     left: 0%;
     height: 100vh;
   }
-  
+  .clearfix::after {
+  content: "";
+  display: block;
+  clear: both;
+  display: grid;
+    place-items: center; /* 水平和垂直居中 */
+  }
+  #customCard {
+
+    display: grid;
+    place-items: center; /* 水平和垂直居中 */
+  }
+  .el-col-16 {
+    display: grid;
+    place-items: center; /* 水平和垂直居中 */
+    height: 75vh; /* 高度为视口高度 */
+}
+  #menu {
+    float: right;
+    margin-right: 1.25rem;
+    margin-top: 1.25rem;
+  }
   .container {
     height: 100%;
   }
-  
+  #label {
+    display: grid;
+    place-items: center; /* 水平和垂直居中 */
+  }
   .content-container {
     height: 100%;
   }
-  
+
   .header {
     background-color: #1E88E5; /* 深蓝色 */
     color: #fff;
@@ -147,10 +237,25 @@
     padding: 20px;
     margin-top: 50%;
   }
-  
+  .el-form-item__content {
+    line-height: 40px;
+    position: relative;
+    font-size: 14px;
+    margin-right: -12.5rem;
+  }
   .calendar-section {
     height: 100%;
     padding: 20px;
+  }
+  .el-dropdown-link {
+    cursor: pointer;
+    color: #000;
+  }
+  .el-icon-arrow-down {
+    font-size: 12px;;
+  }
+  .narrow-input {
+  max-width: 100px; /* 设置输入框的最大宽度 */
   }
   
   /* 媒体查询 */

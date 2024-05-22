@@ -177,7 +177,7 @@ import axios from 'axios';
                 axios.post('http://localhost:8081/api/login',login_data)
                     .then((response) => {
                         // 请求成功处理
-                        console.log(response);
+                        this.fetchUsers(login_data);
                         this.$router.push('/home');
                     })
                     .catch((error) => {
@@ -187,15 +187,52 @@ import axios from 'axios';
                     });
                 
             },
-        qqLogin(){
-            this.$router.push('/QQLogin');
-        },
-        wechatLogin(){
-            this.$router.push('/WechatLogin');
-        },
-        aliLogin(){
-            this.$router.push('/AliLogin');
-        }
+            async fetchUsers(login_data) {
+                axios.post('http://localhost:8081/api/userinfo',login_data)
+                    .then((response) => {
+                        // 请求成功处理
+                        console.log(response.data);
+                        const isoString = response.data.birthday;
+                        const date = new Date(isoString);
+
+                        const year = date.getUTCFullYear();
+                        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                        const day = String(date.getUTCDate()).padStart(2, '0');
+
+                        const formattedDate = `${year}-${month}-${day}`;
+
+                        this.updateUsername(response.data.username);
+                        this.updateEmail(response.data.email);
+                        this.updateBirthday(formattedDate);
+                        this.updateBalance(response.data.balance);
+                    })
+                    .catch((error) => {
+                        // 请求失败处理
+                        console.error(error);
+                        this.$message.error("获取用户信息失败！");
+                    });
+            },
+            updateUsername(newUsername) {
+            this.$store.dispatch('updateUsername', newUsername); // 更新用户名
+            },
+            updateEmail(newEmail) {
+            this.$store.dispatch('updateEmail', newEmail); // 更新邮箱
+            },
+            updateBirthday(newBirthday) {
+            this.$store.dispatch('updateBirthday', newBirthday); // 更新生日
+            },
+            updateBalance(newBalance) {
+            this.$store.dispatch('updateBalance', newBalance); // 更新余额
+            },
+            qqLogin(){
+                this.$router.push('/QQLogin');
+            },
+            wechatLogin(){
+                this.$router.push('/WechatLogin');
+            },
+            aliLogin(){
+                this.$router.push('/AliLogin');
+            }
     }
 }
   

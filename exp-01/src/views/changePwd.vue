@@ -172,7 +172,7 @@ export default {
                         // 请求成功处理
                         console.log(response);
                         this.$message.success('修改成功！');
-                        //this.$router.push('/');
+                        this.$router.push('/');
                     })
                     .catch((error) => {
                         // 请求失败处理
