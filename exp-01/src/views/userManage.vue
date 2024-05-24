@@ -56,11 +56,10 @@
             <el-button type="primary" icon="el-icon-search" @click="searchuser">查询</el-button>
           </div>
           <el-table
-            :data="tableData"
+            :data="authors"
             :border="true"
             style="width: 100%">
             <el-table-column
-              fixed
               prop="date"
               label="日期"
               width="150">
@@ -95,22 +94,27 @@
               label="操作"
               width="100">
               <template slot-scope="scope">
-                <el-button @click="handleClick(scope.row)" type="text" size="small">查看</el-button>
-                <el-button type="text" size="small">编辑</el-button>
+                <el-button @click="handleEditClick(scope.row)" type="text" size="small">编辑</el-button>
+                <el-button @click="handleDeleteClick(scope.row)" type="text" size="small">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
           <el-pagination
-            background
-            layout="prev, pager, next"
-            :total="1000">
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="currentPage"
+            :page-sizes="[10,15,20]"
+            :page-size="10"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total=totalItems>
           </el-pagination>
         </el-main>
       </el-container>
     </el-container>
 
+    <!-- 属性绑定语法是在属性名前加一个冒号（:），用于将Vue组件中的数据绑定到HTML元素的属性上。这样，当数据发生变化时，HTML元素上的属性也会被更新。 -->
     <!-- Form Dialog -->
-    <el-dialog :visible.sync="isadduser" title="新增作者" :modal="false" class="form">
+    <el-dialog :visible.sync="isadduser" :title='this.text + "作者"'  :modal="false" class="form">
       <el-form :model="form" label-position="left" label-width="80px">
         <el-form-item label="姓名">
           <el-input v-model="form.name" placeholder="姓名" class="full-width"></el-input>
@@ -125,12 +129,12 @@
           </el-date-picker>
         </el-form-item>
         <el-form-item label="省份">
-          <el-select v-model="form.province" class="full-width" placeholder="请选择" @change="loadCities">
+          <el-select v-model="form.province" class="full-width" placeholder="请选择" @change="loadCities(form.province)">
           <el-option
             v-for="item in provinces"
-            :key="item.value"
+            :key="item.name"
             :label="item.label"
-            :value="item.value">
+            :value="item.name">
           </el-option>
         </el-select>
         </el-form-item>
@@ -138,9 +142,9 @@
           <el-select v-model="form.city" class="full-width" placeholder="请选择">
           <el-option
             v-for="item in cities"
-            :key="item.value"
+            :key="item.name"
             :label="item.label"
-            :value="item.value">
+            :value="item.name">
           </el-option>
         </el-select>
         </el-form-item>
@@ -164,8 +168,9 @@ export default {
   name: 'MainPage',
   data() {
     return {
-      provinces: [],
-      cities: [],
+      currentPage: 1,
+      totalItems: 0,
+      pageSize: 10,
       form: {
         name: '',
         date: '',
@@ -175,52 +180,124 @@ export default {
         zip: ''
       },
       inputUserName: '',
-      tableData: [{
-        date: '2016-05-02',
-        name: '王小虎',
-        province: '上海',
-        city: '普陀区',
-        address: '上海市普陀区金沙江路 1518 弄',
-        zip: 200333
-      }, {
-        date: '2016-05-04',
-        name: '王小虎',
-        province: '上海',
-        city: '普陀区',
-        address: '上海市普陀区金沙江路 1517 弄',
-        zip: 200333
-      }, {
-        date: '2016-05-01',
-        name: '王小虎',
-        province: '上海',
-        city: '普陀区',
-        address: '上海市普陀区金沙江路 1519 弄',
-        zip: 200333
-      }, {
-        date: '2016-05-03',
-        name: '王小虎',
-        province: '上海',
-        city: '普陀区',
-        address: '上海市普陀区金沙江路 1516 弄',
-        zip: 200333
-      }],
+      authors: [],
       headerColor: '#1E88E5',
       mainColor: '#BBDEFB',
       isadduser: false,
+      provinces: [],
+      cities: [],
+      text:'新增'
     };
   },
   mounted() {
     this.loadProvinces();
+    this.fetchData();
+  },
+  watch: {
+    // 监听省份变化
+    'form.province'(newValue, oldValue) {
+      if (this.text === '编辑') {
+        // 获取城市数据
+        this.loadCities(newValue);
+        if(oldValue !== ''){
+          this.form.city = '';
+          this.form.address = '';
+        }
+      } else {
+        // 如果省份为空，将城市数据清空
+        this.form.city = '';
+        this.cities = [];
+        this.form.address = '';
+      }
+    }
   },
   methods: {
+    
+    fetchData() {
+      const url = 'http://localhost:8081/api/authors';
+      axios.get(url, {
+        params: {
+          page: this.currentPage,
+          pageSize: this.pageSize
+        }
+      }).then(response => {
+        const pageInfo = response.data;
+        // 遍历作者列表，修改日期格式
+        pageInfo.list.forEach(author => {
+          author.date = this.formatDate(author.date);
+        });
+        // 将修改后的作者列表赋值给 this.authors
+        this.authors = pageInfo.list;
+        this.totalItems = pageInfo.total;
+      }).catch(error => {
+        console.error("Error fetching data: ", error);
+      });
+    },
+    formatDate(dateString) {
+    let date = new Date(dateString);
+    let year = date.getFullYear();
+    let month = (date.getMonth() + 1).toString().padStart(2, '0');
+    let day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+    },
+    handleCurrentChange(page) {
+      this.currentPage = page;
+      this.fetchData();
+    },
+    handleSizeChange(size) {
+      this.pageSize = size;
+      this.fetchData();
+    },
     handleOpen(key, keyPath) {
       console.log(key, keyPath);
     },
     handleClose(key, keyPath) {
       console.log(key, keyPath);
     },
-    handleClick(row) {
-      console.log(row);
+    handleEditClick(row) {
+      this.text = '编辑';
+      console.log('Edit:', row);
+      this.isadduser = true;
+      this.form.address = row.address;
+      this.form.province = row.province;
+      this.loadCities(row.province);
+      this.form.city = row.city;
+      console.log(this.form.city);
+      this.form.date = row.date;
+      this.form.name = row.name;
+      this.form.zip = row.zip;
+
+      // 编辑页面
+
+    },
+    handleDeleteClick(row) {
+      // 删除操作
+      this.$confirm('此操作将永久删除该作者, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        axios.delete('http://localhost:8081/api/deleteauthor', {
+          params: {
+            id: row.id
+          }
+        }).then(response => {
+          this.$message.success('删除成功');
+          if(this.authors.length === 1 && this.currentPage > 1){
+            this.currentPage = this.currentPage - 1;
+          }
+          this.handleCurrentChange(this.currentPage);
+      }).catch(error => {
+        this.$message.error('删除失败');
+        console.error(error);
+      });
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        });
+      });
+      
     },
     pushHome(){
       this.$router.push('/home');
@@ -237,11 +314,30 @@ export default {
       this.mainColor = '#BBDEFB';
     },
     adduser(){
+      this.quitForm();
+      this.text = '新增';
       console.log('adduser');
       this.isadduser = true;
     },
     searchuser(){
       console.log('searchuser');
+      const url = 'http://localhost:8081/api/searchauthor';
+      axios.get(url, {
+        params: {
+          name: this.inputUserName
+        }
+      }).then(response => {
+        const pageInfo = response.data;
+        // 遍历作者列表，修改日期格式
+        pageInfo.list.forEach(author => {
+          author.date = this.formatDate(author.date);
+        });
+        // 将修改后的作者列表赋值给 this.authors
+        this.authors = pageInfo.list;
+        this.totalItems = pageInfo.total;
+      }).catch(error => {
+        console.error("Error fetching data: ", error);
+      });
     },
     quitForm(){
       this.form = {
@@ -259,7 +355,15 @@ export default {
       axios.post('http://localhost:8081/api/addauthor', this.form)
         .then((response) => {
           // 请求成功处理
-          console.log(response.data);
+          this.$message.success(this.text + '成功');
+          this.fetchData();
+        })
+        .catch((error) => {
+          // 请求失败处理
+          this.$message.error(this.text + '失败');
+          console.error(error);
+        })
+        .finally(() => {
           this.form = {
             name: '',
             date: '',
@@ -268,45 +372,57 @@ export default {
             address: '',
             zip: ''
           };
-          this.$message.success('新增成功');
         })
-        .catch((error) => {
-          // 请求失败处理
-          console.error(error);
-        });
+      
     },
     loadProvinces() {
-      AMap.plugin('AMap.CitySearch', () => {
-        const citySearch = new AMap.CitySearch();
-        citySearch.getLocalCity((status, result) => {
-          if (status === 'complete' && result.info === 'OK') {
-            this.provinces = result.provinceList.map(province => ({
-              value: province.name,
-              label: province.name
-            }));
-            console.log(this.provinces);
-          }
-        });
+      axios.get('https://restapi.amap.com/v3/config/district', {
+        params: {
+          key: 'd4ee113a63fd12a5c96e8a56d5b56469',
+          keywords: '中国',
+          subdistrict: 1
+        }
+      })
+      .then(response => {
+        // 请求成功，处理返回的数据
+        if (response.data && response.data.districts) {
+          const provinces = response.data.districts[0].districts.map(district => ({
+            name: district.name,
+            level: district.level
+          }));
+          this.provinces = provinces;
+        }
+      })
+      .catch(error => {
+        // 请求失败，处理错误信息
+        console.error('Error:', error);
       });
     },
-    loadCities() {
-      if (!this.form.province) return;
-      AMap.plugin('AMap.DistrictSearch', () => {
-        const districtSearch = new AMap.DistrictSearch({
-          subdistrict: 1,
-          extensions: 'base'
-        });
-        districtSearch.search(this.form.province, (status, result) => {
-          if (status === 'complete' && result.info === 'OK') {
-            this.cities = result.districtList[0].districtList.map(city => ({
-              value: city.name,
-              label: city.name
-            }));
-          }
-        });
+    loadCities(province) {
+      axios.get('https://restapi.amap.com/v3/config/district', {
+        params: {
+          key: 'd4ee113a63fd12a5c96e8a56d5b56469', 
+          keywords: province, // 根据选择的省份名称查询对应的市区数据
+          subdistrict: 2
+        }
+      })
+      .then(response => {
+        // 请求成功，处理返回的数据
+        if (response.data && response.data.districts && response.data.districts.length > 0) {
+          const cities = response.data.districts[0].districts.map(district => ({
+            name: district.name,
+            level: district.level
+          }));
+          this.cities = cities;
+        }
+      })
+      .catch(error => {
+        // 请求失败，处理错误信息
+        console.error('Error:', error);
       });
     }
-  }
+  },
+
 };
 </script>
 
@@ -317,7 +433,7 @@ export default {
   width: 100%;
   top: 0%;
   left: 0%;
-  height: 100vh;
+  height: 90vh;
 }
 .upfield {
   display: flex;

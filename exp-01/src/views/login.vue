@@ -1,7 +1,7 @@
 <template>
     <div id="background">
         <div id="login">
-            <el-card class="box-card">
+            <el-card>
                <div id="login-text">登录</div>
                <div id="form">
                    <div class="box1">
@@ -205,6 +205,8 @@ import axios from 'axios';
                         this.updateEmail(response.data.email);
                         this.updateBirthday(formattedDate);
                         this.updateBalance(response.data.balance);
+                        this.updateAvatar(response.data.avatar);
+                        console.log(response.data.avatar);
                     })
                     .catch((error) => {
                         // 请求失败处理
@@ -223,6 +225,9 @@ import axios from 'axios';
             },
             updateBalance(newBalance) {
             this.$store.dispatch('updateBalance', newBalance); // 更新余额
+            },
+            updateAvatar(newAvatar) {
+            this.$store.dispatch('updateAvatar', newAvatar); // 更新头像
             },
             qqLogin(){
                 this.$router.push('/QQLogin');
