@@ -7,3 +7,21 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: 2432757689
+  web:
+    resources:
+      static-locations: file:/Users/hanlelin/Desktop/documents/web_exp/exp-02/back-project/uploads
+  mvc:
+    path-match:
+      matching-strategy: ant_path_matcher
+    static-path-pattern: /uploads/**
+
+mybatis-plus:
+  mapper-locations: classpath:/mapper/*.xml
+
+pagehelper:
+  propertyName: propertyValue
+  helper-dialect: mysql
+  reasonable: false
+  support-methods-arguments: true
+  params: count=countSql
+  defaultCount: true

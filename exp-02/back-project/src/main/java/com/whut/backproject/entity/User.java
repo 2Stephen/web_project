@@ -17,4 +17,8 @@ public class User {
     private String email;
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
+    @TableField("balance")
+    private Double balance;
+    @TableField("avatar")
+    private String avatar;
 }
